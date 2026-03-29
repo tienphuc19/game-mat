@@ -2,18 +2,25 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Game Hứng Bi Bằng Mắt - Bản Hoàn Chỉnh (Đã Sửa Lỗi Cam)</title>
+    <title>Game Hứng Bi Bằng Mắt - Fix Hiện Cam</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/webgazer/2.2.0/webgazer.min.js"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #121212; /* Nền tối để chống lóa kính cận */
+            background-color: #121212; 
             color: white;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* --- GIAO DIỆN HIỆU CHỈNH 9 ĐIỂM --- */
+        /* ÉP BUỘC CAMERA PHẢI NỔI LÊN TRÊN CÙNG */
+        #webgazerVideoContainer {
+            z-index: 99999 !important;
+            display: block !important;
+            border: 2px solid #00ffcc;
+        }
+
+        /* --- GIAO DIỆN HIỆU CHỈNH --- */
         #calibration-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 100;
@@ -21,7 +28,7 @@
         
         #ui-text {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; pointer-events: none; /* Để click xuyên qua chữ */
+            text-align: center; pointer-events: none; 
         }
         
         h1 { color: #ff3366; margin-bottom: 5px; }
@@ -33,15 +40,14 @@
             transform: translate(-50%, -50%); border: 3px solid white;
             box-shadow: 0 0 15px #ff3366; transition: opacity 0.2s, transform 0.1s;
             pointer-events: auto;
+            display: none; /* Ẩn lúc đang tải cam */
         }
         .calib-btn:active { transform: translate(-50%, -50%) scale(0.8); }
 
-        /* Vị trí 9 chấm đỏ */
         #pt1 { top: 10%; left: 10%; } #pt2 { top: 10%; left: 50%; } #pt3 { top: 10%; left: 90%; }
         #pt4 { top: 50%; left: 10%; } #pt5 { top: 50%; left: 50%; } #pt6 { top: 50%; left: 90%; }
         #pt7 { top: 90%; left: 10%; } #pt8 { top: 90%; left: 50%; } #pt9 { top: 90%; left: 90%; }
 
-        /* Nút bắt đầu game (ẩn lúc đầu) */
         button.start-btn {
             margin-top: 20px; padding: 15px 30px; font-size: 20px; cursor: pointer;
             background: #00ffcc; color: #000; border: none; border-radius: 50px; 
@@ -77,8 +83,8 @@
 
     <div id="calibration-layer">
         <div id="ui-text">
-            <h1 id="title">BƯỚC 1: DẠY AI NHẬN DIỆN MẮT</h1>
-            <p id="subtitle">Nhìn chằm chằm vào từng chấm đỏ và <b>CLICK 5 LẦN</b> vào nó.</p>
+            <h1 id="title">⏳ ĐANG TẢI CAMERA & AI...</h1>
+            <p id="subtitle">Vui lòng đợi vài giây để hệ thống khởi động.</p>
             <button class="start-btn" id="startBtn" onclick="startGame()">▶ CHƠI GAME</button>
         </div>
         
@@ -100,11 +106,9 @@
     </div>
 
     <script>
-        // --- BIẾN TOÀN CỤC ---
         let clickCounts = {};
         let pointsLeft = 9;
         
-        // Biến Game
         let ball = document.getElementById('ball');
         let paddle = document.getElementById('paddle');
         let scoreElement = document.getElementById('score');
@@ -113,36 +117,37 @@
         let ballX = window.innerWidth / 2, ballY = 50;
         let ballSpeedX = 6, ballSpeedY = 6;
 
-        // --- KHỞI ĐỘNG WEBGAZER ---
-        window.onload = function() {
-            // Đã xóa dòng webgazer.clearData() gây lỗi ở bản 2.2.0
-
-            webgazer.setGazeListener(function(data, elapsedTime) {
-                // Nếu chưa vào game hoặc không thấy mắt thì bỏ qua
+        // Dùng async/await để đảm bảo load xong mới hiện giao diện
+        window.onload = async function() {
+            // Cấu hình chuỗi lệnh chuẩn
+            await webgazer.setGazeListener(function(data, elapsedTime) {
                 if (data == null || !isPlaying) return;
                 
-                // Mấu chốt: Di chuyển giá đỡ (paddle) theo tọa độ X của mắt
                 let eyeX = data.x;
                 if(eyeX < 80) eyeX = 80; 
                 if(eyeX > window.innerWidth - 80) eyeX = window.innerWidth - 80;
                 
                 paddle.style.left = eyeX + 'px';
-            }).begin();
+            }).showVideoPreview(true).showPredictionPoints(true).begin();
 
-            webgazer.showVideoPreview(true); 
-            webgazer.showPredictionPoints(true);
+            // KHI LOAD XONG MỚI CHẠY XUỐNG ĐÂY
+            document.getElementById('title').innerText = "BƯỚC 1: DẠY AI NHẬN DIỆN MẮT";
+            document.getElementById('subtitle').innerHTML = "Nhìn chằm chằm vào từng chấm đỏ và <b>CLICK 5 LẦN</b> vào nó.";
+            
+            // Hiện 9 chấm đỏ lên
+            let pts = document.getElementsByClassName('calib-btn');
+            for(let i=0; i<pts.length; i++) {
+                pts[i].style.display = 'block';
+            }
         };
 
-        // --- HÀM XỬ LÝ CLICK HIỆU CHỈNH ---
         function calibrate(element) {
             let id = element.id;
             if (!clickCounts[id]) clickCounts[id] = 0;
             clickCounts[id]++;
             
-            // Làm mờ dần chấm đỏ
             element.style.opacity = 1 - (clickCounts[id] * 0.2);
 
-            // Đủ 5 click thì ẩn chấm đỏ đi
             if (clickCounts[id] >= 5) {
                 element.style.display = 'none';
                 pointsLeft--;
@@ -156,14 +161,12 @@
             }
         }
 
-        // --- HÀM XỬ LÝ GAME ---
         function startGame() {
-            // Ẩn bảng hiệu chỉnh, hiện bảng game
             document.getElementById('calibration-layer').style.display = 'none';
             document.getElementById('game-layer').style.display = 'block';
             
             isPlaying = true;
-            ballSpeedX = 6 * (Math.random() > 0.5 ? 1 : -1); // Ngẫu nhiên ném bi sang trái/phải
+            ballSpeedX = 6 * (Math.random() > 0.5 ? 1 : -1); 
             requestAnimationFrame(gameLoop);
         }
 
@@ -173,12 +176,9 @@
             ballX += ballSpeedX; 
             ballY += ballSpeedY;
 
-            // Đập tường trái/phải
             if (ballX <= 11 || ballX >= window.innerWidth - 11) ballSpeedX = -ballSpeedX;
-            // Đập trần nhà
             if (ballY <= 11) ballSpeedY = -ballSpeedY;
 
-            // Xử lý va chạm giá đỡ
             let paddleRect = paddle.getBoundingClientRect();
             let ballRect = ball.getBoundingClientRect();
 
@@ -187,33 +187,28 @@
                 ballRect.left <= paddleRect.right && 
                 ballRect.top <= paddleRect.bottom) {
                 
-                // Nảy lên
                 ballSpeedY = -Math.abs(ballSpeedY);
                 score++; 
                 scoreElement.innerText = score;
                 
-                // Tăng tốc độ bóng mỗi lần đỡ trúng
                 if(Math.abs(ballSpeedY) < 15) { 
                     ballSpeedX *= 1.05; 
                     ballSpeedY *= 1.05; 
                 }
             }
 
-            // Bóng rơi xuống đáy
             if (ballY > window.innerHeight) {
                 isPlaying = false;
                 alert("GAME OVER! Điểm của bạn: " + score + "\nBấm F5 hoặc Tải lại trang để chơi tiếp.");
                 return;
             }
 
-            // Vẽ lại quả bóng
             ball.style.left = ballX + 'px'; 
             ball.style.top = ballY + 'px';
             
             requestAnimationFrame(gameLoop);
         }
 
-        // Tắt WebGazer khi đóng web
         window.onbeforeunload = function() { 
             webgazer.end(); 
         }
