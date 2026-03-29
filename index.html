@@ -1,57 +1,92 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>WebGazer - Bản Chuẩn Gốc</title>
-    <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
-        body { 
-            margin: 0; 
-            height: 100vh; 
-            background-color: white; 
-            font-family: Arial, sans-serif;
-        }
-        #instruction {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            z-index: 100;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>WebGazer Demo</title>
+  <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+  <style>
+    body { text-align: center; font-family: Arial; }
+    .point {
+      width: 30px;
+      height: 30px;
+      background: red;
+      border-radius: 50%;
+      position: absolute;
+      cursor: pointer;
+      opacity: 0.5;
+    }
+    #dot {
+      width: 10px;
+      height: 10px;
+      background: blue;
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+    }
+  </style>
 </head>
 <body>
 
-    <div id="instruction">
-        <h2>Bước Hiệu Chỉnh (Calibration)</h2>
-        <p>1. Hãy nhìn theo con trỏ chuột.</p>
-        <p>2. <b>Click 3 lần</b> vào góc trên cùng bên trái màn hình.</p>
-        <p>3. Làm tương tự cho 3 góc còn lại và điểm chính giữa màn hình.</p>
-        <p><i>Chấm đỏ sẽ tự động lưu dữ liệu học vào trình duyệt và mượt dần lên.</i></p>
-        <button onclick="document.getElementById('instruction').style.display='none'">Đã hiểu, Ẩn bảng này đi</button>
-    </div>
+<h2>WebGazer Calibration Demo</h2>
+<p>Click each red point 5 times to calibrate</p>
 
-    <script>
-        window.onload = function() {
-            // Khởi động WebGazer với cấu hình cốt lõi
-            webgazer.setGazeListener(function(data, elapsedTime) {
-                // Không làm gì cả, chỉ để thư viện tự chạy và tự hiện chấm đỏ mặc định
-            }).begin();
+<div id="dot"></div>
 
-            // Bật các module hỗ trợ y hệt bản gốc
-            webgazer.showVideoPreview(true);     // Hiện camera
-            webgazer.showPredictionPoints(true); // Hiện chấm đỏ của hệ thống
-            webgazer.applyKalmanFilter(true);    // Bật bộ lọc chống rung
-        };
+<script>
+const points = [];
+const clicks = {};
 
-        window.onbeforeunload = function() {
-            webgazer.end();
-        }
-    </script>
+function createPoints() {
+  const positions = [
+    [10,10],[50,10],[90,10],
+    [10,50],[50,50],[90,50],
+    [10,90],[50,90],[90,90]
+  ];
+
+  positions.forEach((pos, index) => {
+    const div = document.createElement('div');
+    div.className = 'point';
+    div.style.left = pos[0] + 'vw';
+    div.style.top = pos[1] + 'vh';
+    clicks[index] = 0;
+
+    div.onclick = () => {
+      clicks[index]++;
+      div.style.opacity = 0.5 + clicks[index]*0.1;
+
+      if (clicks[index] >= 5) {
+        div.style.background = 'green';
+      }
+
+      checkCalibration();
+    };
+
+    document.body.appendChild(div);
+    points.push(div);
+  });
+}
+
+function checkCalibration() {
+  const done = Object.values(clicks).every(c => c >= 5);
+  if (done) {
+    alert('Calibration complete!');
+  }
+}
+
+// WebGazer setup
+webgazer.setGazeListener(function(data) {
+  if (data == null) return;
+  const dot = document.getElementById('dot');
+  dot.style.left = data.x + 'px';
+  dot.style.top = data.y + 'px';
+}).begin();
+
+webgazer.showVideoPreview(true);
+webgazer.showPredictionPoints(false);
+
+createPoints();
+</script>
 
 </body>
 </html>
