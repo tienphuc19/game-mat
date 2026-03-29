@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Game Hứng Bi Bằng Mắt - Bản Hoàn Chỉnh</title>
+    <title>Game Hứng Bi Bằng Mắt - Bản Hoàn Chỉnh (Đã Sửa Lỗi Cam)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/webgazer/2.2.0/webgazer.min.js"></script>
     <style>
         body {
@@ -115,8 +115,7 @@
 
         // --- KHỞI ĐỘNG WEBGAZER ---
         window.onload = function() {
-            // Xóa rác data cũ để AI học lại chuẩn 100%
-            webgazer.clearData(); 
+            // Đã xóa dòng webgazer.clearData() gây lỗi ở bản 2.2.0
 
             webgazer.setGazeListener(function(data, elapsedTime) {
                 // Nếu chưa vào game hoặc không thấy mắt thì bỏ qua
@@ -163,10 +162,6 @@
             document.getElementById('calibration-layer').style.display = 'none';
             document.getElementById('game-layer').style.display = 'block';
             
-            // Có thể tắt camera và chấm đỏ đi cho đỡ vướng tầm nhìn (tùy chọn)
-            // webgazer.showVideoPreview(false);
-            // webgazer.showPredictionPoints(false);
-
             isPlaying = true;
             ballSpeedX = 6 * (Math.random() > 0.5 ? 1 : -1); // Ngẫu nhiên ném bi sang trái/phải
             requestAnimationFrame(gameLoop);
