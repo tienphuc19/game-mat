@@ -1,92 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>WebGazer Demo</title>
-  <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
-  <style>
-    body { text-align: center; font-family: Arial; }
-    .point {
-      width: 30px;
-      height: 30px;
-      background: red;
-      border-radius: 50%;
-      position: absolute;
-      cursor: pointer;
-      opacity: 0.5;
-    }
-    #dot {
-      width: 10px;
-      height: 10px;
-      background: blue;
-      border-radius: 50%;
-      position: fixed;
-      pointer-events: none;
-      z-index: 9999;
-    }
-  </style>
+    <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
 </head>
 <body>
-
-<h2>WebGazer Calibration Demo</h2>
-<p>Click each red point 5 times to calibrate</p>
-
-<div id="dot"></div>
-
-<script>
-const points = [];
-const clicks = {};
-
-function createPoints() {
-  const positions = [
-    [10,10],[50,10],[90,10],
-    [10,50],[50,50],[90,50],
-    [10,90],[50,90],[90,90]
-  ];
-
-  positions.forEach((pos, index) => {
-    const div = document.createElement('div');
-    div.className = 'point';
-    div.style.left = pos[0] + 'vw';
-    div.style.top = pos[1] + 'vh';
-    clicks[index] = 0;
-
-    div.onclick = () => {
-      clicks[index]++;
-      div.style.opacity = 0.5 + clicks[index]*0.1;
-
-      if (clicks[index] >= 5) {
-        div.style.background = 'green';
-      }
-
-      checkCalibration();
-    };
-
-    document.body.appendChild(div);
-    points.push(div);
-  });
-}
-
-function checkCalibration() {
-  const done = Object.values(clicks).every(c => c >= 5);
-  if (done) {
-    alert('Calibration complete!');
-  }
-}
-
-// WebGazer setup
-webgazer.setGazeListener(function(data) {
-  if (data == null) return;
-  const dot = document.getElementById('dot');
-  dot.style.left = data.x + 'px';
-  dot.style.top = data.y + 'px';
-}).begin();
-
-webgazer.showVideoPreview(true);
-webgazer.showPredictionPoints(false);
-
-createPoints();
-</script>
-
+    <h1>Test WebGazer Tối Giản</h1>
+    <p>Bấm F12, mở tab Console để xem tọa độ mắt.</p>
+    <script>
+        window.onload = function() {
+            webgazer.setGazeListener(function(data, elapsedTime) {
+                if (data == null) return; // Nếu bị lóa/không thấy mắt thì bỏ qua
+                console.log("Mắt đang nhìn tọa độ -> X: " + Math.round(data.x) + " | Y: " + Math.round(data.y));
+            }).begin();
+            
+            webgazer.showVideoPreview(true).showPredictionPoints(true);
+        };
+    </script>
 </body>
 </html>
