@@ -2,100 +2,41 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Game Hứng Bi Bằng Mắt - Fix Mượt - WebGazer</title>
+    <title>Game Hứng Bi - Chạy Local WebGazer</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden; /* Ẩn thanh cuộn */
-            background-color: #111;
-            color: white;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        /* Giao diện hướng dẫn ban đầu */
+        body { margin: 0; overflow: hidden; background-color: #111; color: white; font-family: sans-serif; }
+        
         #ui-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 100;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(0, 0, 0, 0.9); z-index: 100;
         }
 
-        button {
-            padding: 15px 30px;
-            font-size: 20px;
-            cursor: pointer;
-            background-color: #00ffcc;
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-        button:hover { background-color: #00b38f; }
-
-        /* Quả bóng */
-        #ball {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background-color: #ff3366;
-            border-radius: 50%;
-            top: 50px;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: none; /* Ẩn đi chờ vào game */
-            z-index: 5;
-        }
-
-        /* Giá đỡ (Thanh hứng bi) */
-        #paddle {
-            position: absolute;
-            width: 150px;
-            height: 20px;
-            background-color: #00ffcc;
-            bottom: 30px; /* Cách đáy 30px */
-            
-            /* SỬA LỖI: Để mặc định ở giữa */
-            left: 50%; 
-            transform: translateX(-50%); /* Căn giữa thanh theo tọa độ X */
-            border-radius: 10px;
-            box-shadow: 0 0 10px #00ffcc;
-            z-index: 5;
-        }
-
-        #score-board {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
-            z-index: 50;
-        }
+        button { padding: 15px 30px; font-size: 20px; cursor: pointer; background-color: #00ffcc; color: #000; border: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+        
+        #ball { position: absolute; width: 20px; height: 20px; background-color: #ff3366; border-radius: 50%; top: 50px; left: 50%; transform: translate(-50%, -50%); display: none; z-index: 5; }
+        
+        #paddle { position: absolute; width: 150px; height: 20px; background-color: #00ffcc; bottom: 30px; left: 50%; transform: translateX(-50%); border-radius: 10px; z-index: 5; transition: left 0.1s ease-out; /* Thêm transition để mượt hơn */ }
+        
+        #score-board { position: absolute; top: 20px; left: 20px; font-size: 24px; font-weight: bold; z-index: 50; }
     </style>
-    <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
+    
+    <script src="webgazer.js"></script>
 </head>
 <body>
 
     <div id="score-board">Điểm: <span id="score">0</span></div>
 
     <div id="ui-layer">
-        <h1>GAME HỨNG BI BẰNG MẮT (V2 - FIX MƯỢT)</h1>
-        <p>1. <b>⚠️ Nhấn OK</b> trên bảng thông báo hiện ra.</p>
-        <p>2. Cho phép Camera.</p>
-        <p>3. Nhìn vào con chuột và <b>CLICK vài lần ở các góc</b>.</p>
-        <button onclick="startGame()">▶ CHƠI GAME</button>
+        <h1>BẢN CHẠY LOCAL (TẢI OFFLINE)</h1>
+        <p>Thư viện WebGazer.js đang được load trực tiếp từ ổ cứng của bạn.</p>
+        <button onclick="startGame()">▶ BẮT ĐẦU CHƠI</button>
     </div>
 
     <div id="ball"></div>
     <div id="paddle"></div>
 
     <script>
-        // Các biến của game
         let ball = document.getElementById('ball');
         let paddle = document.getElementById('paddle');
         let scoreElement = document.getElementById('score');
@@ -104,109 +45,64 @@
         let score = 0;
         let ballX = window.innerWidth / 2;
         let ballY = 50;
-        let ballSpeedX = 5; // Tốc độ bi ngang
-        let ballSpeedY = 5; // Tốc độ bi dọc
+        let ballSpeedX = 5; let ballSpeedY = 5;
 
-        // Khởi động WebGazer ngay khi load trang
+        // Khởi tạo WebGazer ngay lập tức
         window.onload = function() {
+            // Xóa toàn bộ dữ liệu máy học cũ lữu trong Local Storage của trình duyệt
+            webgazer.clearData(); 
+
             webgazer.setGazeListener(function(data, elapsedTime) {
                 if (data == null) return;
                 
-                // MẤU CHỐT Ở ĐÂY: Gán tọa độ X của mắt cho tọa độ X của giá đỡ
                 let eyeX = data.x;
-                
-                // Giới hạn để giá đỡ không chạy lọt ra ngoài màn hình
                 if(eyeX < 75) eyeX = 75; 
                 if(eyeX > window.innerWidth - 75) eyeX = window.innerWidth - 75;
 
                 paddle.style.left = eyeX + 'px';
-
             }).begin();
 
-            // === CẤU HÌNH ĐỂ MƯỢT NHƯ BẢN DEMO BẠN THÍCH ===
-            
-            // 1. Hiện video camera để kiểm tra nhận diện mặt
             webgazer.showVideoPreview(true);
-            
-            // 2. Hiện chấm đỏ dự đoán MẶC ĐỊNH (Cái này cực kỳ nhạy, giúp bạn test)
-            // Nếu giá đỡ không di chuyển, hãy nhìn xem chấm đỏ nhỏ này có di chuyển không.
-            webgazer.showPredictionPoints(true); 
-            
-            // 3. Bật Kalman Filter để làm mượt chuyển động mắt (Giảm rung lắc)
+            webgazer.showPredictionPoints(true);
             webgazer.applyKalmanFilter(true);
         };
 
-        // Hàm bắt đầu game
         function startGame() {
-            document.getElementById('ui-layer').style.display = 'none'; // Ẩn màn hình chờ
-            ball.style.display = 'block'; // Hiện quả bóng
+            document.getElementById('ui-layer').style.display = 'none';
+            ball.style.display = 'block';
             isPlaying = true;
-            
-            // Reset điểm và vị trí bóng
-            score = 0;
-            scoreElement.innerText = score;
-            ballY = 50;
-            ballX = Math.random() * window.innerWidth;
-            
-            // Bắt đầu vòng lặp game
+            score = 0; scoreElement.innerText = score;
+            ballY = 50; ballX = Math.random() * window.innerWidth;
             requestAnimationFrame(gameLoop);
         }
 
-        // Vòng lặp vật lý của game (chạy liên tục 60 khung hình/giây)
         function gameLoop() {
             if (!isPlaying) return;
+            ballX += ballSpeedX; ballY += ballSpeedY;
 
-            // Di chuyển quả bóng
-            ballX += ballSpeedX;
-            ballY += ballSpeedY;
+            if (ballX <= 10 || ballX >= window.innerWidth - 10) ballSpeedX = -ballSpeedX;
+            if (ballY <= 10) ballSpeedY = -ballSpeedY;
 
-            // 1. Bóng đụng tường 2 bên (Trái/Phải) -> Nảy lại
-            if (ballX <= 10 || ballX >= window.innerWidth - 10) {
-                ballSpeedX = -ballSpeedX;
-            }
-
-            // 2. Bóng đụng trần nhà (Trên) -> Nảy xuống
-            if (ballY <= 10) {
-                ballSpeedY = -ballSpeedY;
-            }
-
-            // 3. Xử lý va chạm với Giá đỡ (Paddle)
             let paddleRect = paddle.getBoundingClientRect();
             let ballRect = ball.getBoundingClientRect();
 
-            if (ballRect.bottom >= paddleRect.top && 
-                ballRect.right >= paddleRect.left && 
-                ballRect.left <= paddleRect.right &&
-                ballRect.top <= paddleRect.bottom) {
-                
-                // Đỡ trúng bi! Nảy lên và tăng điểm
-                ballSpeedY = -Math.abs(ballSpeedY); // Ép tốc độ Y thành số âm (đi lên)
-                score++;
-                scoreElement.innerText = score;
-
-                // Tăng tốc độ bóng một chút cho khó hơn
-                ballSpeedX *= 1.05;
-                ballSpeedY *= 1.05;
+            if (ballRect.bottom >= paddleRect.top && ballRect.right >= paddleRect.left && ballRect.left <= paddleRect.right && ballRect.top <= paddleRect.bottom) {
+                ballSpeedY = -Math.abs(ballSpeedY);
+                score++; scoreElement.innerText = score;
+                ballSpeedX *= 1.05; ballSpeedY *= 1.05;
             }
 
-            // 4. Bóng rớt xuống đáy (Thua)
             if (ballY > window.innerHeight) {
                 isPlaying = false;
-                alert("GAME OVER! Điểm của bạn: " + score + "\nBấm F5 để tải lại trang nếu muốn chơi lại.");
+                alert("GAME OVER! Điểm: " + score);
                 return;
             }
 
-            // Cập nhật vị trí bóng trên màn hình
-            ball.style.left = ballX + 'px';
-            ball.style.top = ballY + 'px';
-
-            // Gọi lại vòng lặp
+            ball.style.left = ballX + 'px'; ball.style.top = ballY + 'px';
             requestAnimationFrame(gameLoop);
         }
 
-        window.onbeforeunload = function() {
-            webgazer.end();
-        }
+        window.onbeforeunload = function() { webgazer.end(); }
     </script>
 </body>
 </html>
