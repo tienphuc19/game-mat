@@ -2,17 +2,19 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Game Hứng Bi - Hiện Video Camera - WebGazer</title>
+    <title>Game Hứng Bi - Chế Độ Tối Chống Phản Chiếu - WebGazer</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
+            /* MẶC ĐỊNH LÀ NỀN SÁNG ĐỂ HIỆU CHỈNH */
             background-color: #f0f2f5; 
             color: #333; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.5s ease, color 0.5s ease; /* Hiệu ứng chuyển mượt */
         }
         
-        /* Container cố định mới để chứa video camera */
+        /* Container cố định chứa video camera */
         #video-container {
             position: fixed;
             top: 10px;
@@ -22,7 +24,7 @@
             border: 2px solid #ccc;
             border-radius: 8px;
             background-color: #f8f8f8;
-            z-index: 10; /* Nằm trên score-board, dưới ui-layer ban đầu */
+            z-index: 10;
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
@@ -30,7 +32,7 @@
         #video-container video {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Video lấp đầy container mà không biến dạng */
+            object-fit: cover;
         }
 
         /* Màn hình hướng dẫn */
@@ -46,7 +48,21 @@
             text-align: center;
             padding: 20px;
             box-sizing: border-box;
+            transition: background 0.5s ease;
         }
+
+        /* LỚP CSS CHO CHẾ ĐỘ TỐI (DARK MODE) */
+        body.dark-mode {
+            background-color: #121212; /* Nền đen tuyền */
+            color: #e0e0e0; /* Chữ xám sáng */
+        }
+
+        body.dark-mode #ui-layer {
+            background: rgba(18, 18, 18, 0.95); /* UI nền tối */
+        }
+
+        body.dark-mode h1 { color: #8ab4f8; }
+        body.dark-mode p { color: #b0b3b8; }
 
         h1 { color: #1a73e8; margin-bottom: 10px; }
         p { font-size: 18px; margin: 5px 0; color: #5f6368; }
@@ -111,6 +127,12 @@
             padding: 10px 20px;
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+
+        body.dark-mode #score-board {
+            background: rgba(30, 30, 30, 0.8);
+            color: #8ab4f8;
         }
     </style>
     
@@ -123,12 +145,12 @@
     <div id="score-board">Điểm: <span id="score">0</span></div>
 
     <div id="ui-layer">
-        <h1>GAME HỨNG BI (V4 - HIỆN CAMERA)</h1>
-        <p>Giao diện sáng giúp WebGazer nhận diện rõ khuôn mặt hơn.</p>
-        <p>1. Cho phép Camera (Bạn sẽ thấy video camera hiện ở góc trên bên trái).</p>
-        <p>2. Nhìn vào con chuột và <span class="highlight">CLICK 10-15 LẦN khắp màn hình</span> để hiệu chỉnh.</p>
-        <p>3. Khi thấy giá đỡ di chuyển theo mắt, bấm bắt đầu.</p>
-        <button onclick="startGame()">▶ BẮT ĐẦU CHƠI</button>
+        <h1>GAME HỨNG BI (V5 - CHỐNG PHẢN CHIẾU KÍNH)</h1>
+        <p>Bản này tự động bật Chế độ tối khi chơi để AI nhìn rõ mắt bạn hơn.</p>
+        <p>1. Cho phép Camera.</p>
+        <p>2. Nhìn camera góc trên bên trái: <span class="highlight">Đảm bảo KHÔNG có vết lóa trắng lớn trên kính.</span></p>
+        <p>3. Nhìn vào con chuột và CLICK 10-15 LẦN khắp màn hình để hiệu chỉnh.</p>
+        <button onclick="startGame()">▶ CHƠI GAME & BẬT CHẾ ĐỘ TỐI</button>
     </div>
 
     <div id="ball"></div>
@@ -164,14 +186,17 @@
             }).begin();
 
             // CẤU HÌNH ĐỂ HIỂN THỊ TRONG CONTAINER CỐ ĐỊNH
-            // webgazer.showVideoPreview(true); // Bản mặc định bị lỗi, chúng ta sửa dòng này:
-            webgazer.showVideoPreview(true, document.getElementById('video-container')); // Sửa đổi ở đây
+            webgazer.showVideoPreview(true, document.getElementById('video-container')); 
             
             webgazer.showPredictionPoints(true); // Hiện chấm đỏ nhỏ mặc định để test
             webgazer.applyKalmanFilter(true); // Bật bộ lọc làm mượt
         };
 
+        // Hàm bắt đầu game
         function startGame() {
+            // === BẬT CHẾ ĐỘ TỐI ĐỂ CHỐNG PHẢN CHIẾU ===
+            document.body.classList.add('dark-mode');
+
             document.getElementById('ui-layer').style.display = 'none';
             ball.style.display = 'block';
             isPlaying = true;
@@ -208,6 +233,8 @@
             if (ballY > window.innerHeight) {
                 isPlaying = false;
                 alert("GAME OVER! Điểm: " + score + "\nBấm F5 để chơi lại.");
+                // === TẮT CHẾ ĐỘ TỐI KHI THUA ===
+                document.body.classList.remove('dark-mode');
                 return;
             }
 
